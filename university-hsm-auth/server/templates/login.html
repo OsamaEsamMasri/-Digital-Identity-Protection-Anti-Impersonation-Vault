@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>لوحة تحكم الجامعة - دخول آمن عبر HSM</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, sans-serif;
+            background: #0f1220;
+            color: #e8e8ec;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .card {
+            background: #1a1e33;
+            padding: 40px;
+            border-radius: 12px;
+            width: 360px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+        }
+        h1 { font-size: 20px; margin-bottom: 4px; }
+        p.sub { color: #9aa0c3; font-size: 13px; margin-bottom: 24px; }
+        input {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 16px;
+            border-radius: 8px;
+            border: 1px solid #33385a;
+            background: #12152a;
+            color: white;
+            box-sizing: border-box;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            border-radius: 8px;
+            border: none;
+            background: #5865f2;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        button:disabled { background: #33385a; cursor: not-allowed; }
+        #status { margin-top: 16px; font-size: 13px; min-height: 20px; }
+        .ok { color: #57f287; }
+        .err { color: #ed4245; }
+        .pending { color: #faa61a; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>🔐 لوحة تحكم الجامعة</h1>
+        <p class="sub">تسجيل الدخول عبر Pico HSM — بدون كلمات سر، بدون Session Cookies قابلة للسرقة</p>
+
+        <input type="text" id="username" placeholder="اسم المستخدم (admin)">
+        <button id="loginBtn" onclick="login()">تسجيل الدخول عبر HSM</button>
+
+        <div id="status"></div>
+    </div>
+
+    <script>
+        const AGENT_URL = "http://127.0.0.1:5050";
+
+        function setStatus(msg, cls) {
+            const el = document.getElementById("status");
+            el.textContent = msg;
+            el.className = cls;
+        }
+
+        async function login() {
+            const username = document.getElementById("username").value.trim();
+            const btn = document.getElementById("loginBtn");
+            if (!username) { setStatus("أدخل اسم المستخدم أولاً", "err"); return; }
+
+            btn.disabled = true;
+            try {
+                // الخطوة 1: اطلب تحدي من السيرفر
+                setStatus("جاري طلب رمز التحدي من السيرفر...", "pending");
+                const chRes = await fetch("/challenge", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ username })
+                });
+                const chData = await chRes.json();
+                if (!chRes.ok) { setStatus("خطأ: " + chData.error, "err"); btn.disabled = false; return; }
+
+                // الخطوة 2: اطلب من الـ Agent المحلي يوقع التحدي عبر الـ HSM
+                setStatus("راجع نافذة التأكيد على جهازك ووافق للتوقيع عبر الـ HSM...", "pending");
+                const signRes = await fetch(AGENT_URL + "/sign", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ nonce: chData.nonce })
+                });
+                const signData = await signRes.json();
+                if (!signRes.ok) { setStatus("رُفض التوقيع أو حصل خطأ: " + signData.error, "err"); btn.disabled = false; return; }
+
+                // الخطوة 3: أرسل التوقيع للسيرفر للتحقق
+                setStatus("جاري التحقق من التوقيع...", "pending");
+                const verRes = await fetch("/verify", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ username, signature: signData.signature })
+                });
+                const verData = await verRes.json();
+                if (!verRes.ok) { setStatus("فشل التحقق: " + verData.error, "err"); btn.disabled = false; return; }
+
+                setStatus("✅ تم التحقق بنجاح! جاري تحويلك...", "ok");
+                window.location.href = "/dashboard";
+
+            } catch (e) {
+                setStatus("تعذر الاتصال بالـ Local Agent. تأكد إنه شغال على جهازك (agent.py).", "err");
+                btn.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>

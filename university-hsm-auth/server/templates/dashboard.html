@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>لوحة التحكم - أدمن</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, sans-serif;
+            background: #0f1220;
+            color: #e8e8ec;
+            padding: 40px;
+            margin: 0;
+        }
+        .banner {
+            background: #1a1e33;
+            border-radius: 12px;
+            padding: 24px;
+            max-width: 600px;
+            margin: auto;
+        }
+        h1 { color: #57f287; }
+        a { color: #5865f2; }
+        .box {
+            background: #12152a;
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 16px;
+            font-size: 14px;
+            line-height: 1.8;
+        }
+    </style>
+</head>
+<body>
+    <div class="banner">
+        <h1>✅ تم الدخول بنجاح، أهلاً {{ username }}</h1>
+        <div class="box">
+            هذا الوصول تم التحقق منه عبر توقيع رقمي صادر من الـ Pico HSM.<br>
+            لا يوجد أي "توكن" ثابت مخزّن بالمتصفح أو بالقرص الصلب يقدر أي
+            برنامج خبيث (Infostealer) يسرقه ويستخدمه لاحقاً — كل جلسة دخول
+            تتطلب توقيع جديد لتحدي جديد.
+        </div>
+        <p style="margin-top:20px;"><a href="/logout">تسجيل خروج</a></p>
+    </div>
+</body>
+</html>
