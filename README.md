@@ -241,10 +241,5 @@ Confirm `agent.py` is still running in its own terminal, and that `AGENT_URL` in
 
 ---
 
-## ⚠️ Disclaimer
 
-This is an educational proof-of-concept built to demonstrate hardware-backed authentication and Zero Trust / IAM principles. It uses plain HTTP, a flat-file key store, and a single hardcoded threat model — **it is not production-ready as-is**. See the [Roadmap](#-roadmap) for what a production deployment would require.
 
-## 📄 License
-
-Released under the [MIT License](LICENSE).
